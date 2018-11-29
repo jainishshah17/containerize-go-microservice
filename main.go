@@ -1,11 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
+
+type Host struct {
+	Host string
+	Date string
+}
 
 func main() {
 	// use PORT environment variable, or default to 8080
@@ -16,7 +22,19 @@ func main() {
 
 	// register hello function to handle all requests
 	server := http.NewServeMux()
-	server.HandleFunc("/", hello)
+	tmpl := template.Must(template.ParseFiles("layout.html"))
+	fs := http.FileServer(http.Dir("static/"))
+	server.Handle("/static/", http.StripPrefix("/static/", fs))
+	server.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Serving request: %s", r.URL.Path)
+		host, _ := os.Hostname()
+		date := time.Now().Local().Format("2006-01-02")
+		data := Host{
+			Host: host,
+			Date: date,
+		}
+		tmpl.Execute(w, data)
+	})
 
 	// start the web server on port and accept requests
 	log.Printf("Server listening on port %s", port)
@@ -24,11 +42,3 @@ func main() {
 	log.Fatal(err)
 }
 
-// hello responds to the request with a plain-text "Hello, world" message.
-func hello(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Serving request: %s", r.URL.Path)
-	host, _ := os.Hostname()
-	fmt.Fprintf(w, "Hello, world!\n")
-	fmt.Fprintf(w, "Version: 1.0.0\n")
-	fmt.Fprintf(w, "Hostname: %s\n", host)
-}
