@@ -7,7 +7,7 @@ node (SLAVE) {
 
     //Clone example project from GitHub repository
     git url: 'https://github.com/jainishshah17/containerize-go-microservice.git', branch: 'master'
-    def rtServer = Artifactory.server SERVER_ID
+    def rtServer = Artifactory.newServer url: ART_SERVER_URL, credentialsId: CREDENTIAL_ID
     def rtDocker = Artifactory.docker server: rtServer
     def buildInfo = Artifactory.newBuildInfo()
     def tagDockerApp
@@ -107,7 +107,7 @@ def reTagLatest (targetRepo) {
     }
     sh 'cat retaga_out.json'
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def curlString = "curl -u " + env.USERNAME + ":" + env.PASSWORD + " " + SERVER_URL
+        def curlString = "curl -u " + env.USERNAME + ":" + env.PASSWORD + " " + ART_SERVER_URL
         def regTagStr = curlString +  "/api/docker/$targetRepo/v2/promote -X POST -H 'Content-Type: application/json' -T retaga_out.json"
         println "Curl String is " + regTagStr
         sh regTagStr
@@ -116,7 +116,7 @@ def reTagLatest (targetRepo) {
 
 def updateProperty (property) {
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-            def curlString = "curl -u " + env.USERNAME + ":" + env.PASSWORD + " " + "-X PUT " + SERVER_URL
+            def curlString = "curl -u " + env.USERNAME + ":" + env.PASSWORD + " " + "-X PUT " + ART_SERVER_URL
             def updatePropStr = curlString +  "/api/storage/${SOURCE_REPO}/containerize-go-microservice/${env.BUILD_NUMBER}?properties=${property}"
             println "Curl String is " + updatePropStr
             sh updatePropStr
