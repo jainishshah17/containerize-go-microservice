@@ -1,6 +1,6 @@
 FROM golang:1.11.1-alpine
 
-ENV PORT 80
+ENV PORT 8080
 
 # Install dependencies
 RUN apk update && apk add --update gcc git musl-dev curl
