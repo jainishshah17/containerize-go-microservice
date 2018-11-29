@@ -16,7 +16,7 @@ node (SLAVE) {
 
     //Build docker image named containerize-go-microservice
     stage ('Build & Deploy') {
-            sh "sed -i 's/docker.artifactory/${ARTDOCKER_REGISTRY}/' Dockerfile"
+            sh "sed -i 's/REPOSITORY/${ARTDOCKER_REGISTRY}/' Dockerfile"
             tagDockerApp = "${ARTDOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
             println "containerize-go-microservice Build"
             docker.build(tagDockerApp)
@@ -59,7 +59,7 @@ node (SLAVE) {
      }
 
     //Promote docker image from staging local repo to production repo in Artifactory
-    /* stage ('Promote') {
+    stage ('Promote') {
             def promotionConfig = [
               'buildName'          : env.JOB_NAME,
               'buildNumber'        : env.BUILD_NUMBER,
@@ -73,16 +73,15 @@ node (SLAVE) {
             rtServer.promote promotionConfig
             reTagLatest (SOURCE_REPO)
             reTagLatest (PROMOTE_REPO)
-        // promote war file from gradle-dev-local to gradle-release-local
-     }*/
+     }
 
 }
 
 def testApp (tag) {
-    docker.image(tag).withRun('-p 9191:8181') {c ->
+    docker.image(tag).withRun('-p 8282:8080') {c ->
         sleep 10
-        //def stdout = sh(script: 'curl "http://localhost:9191/swampup/"', returnStdout: true)
-        //if (stdout.contains("Welcome Docker Lifecycle Training")) {
+        //def stdout = sh(script: 'curl "http://localhost:8282/swampup/"', returnStdout: true)
+        //if (stdout.contains("Be prepared to be amazed at KubeCon 2018!")) {
           //  println "*** Passed Test: " + stdout
             println "*** Passed Test"
             return true
