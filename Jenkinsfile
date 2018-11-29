@@ -7,7 +7,7 @@ node (SLAVE) {
 
     //Clone example project from GitHub repository
     git url: 'https://github.com/jainishshah17/containerize-go-microservice.git', branch: 'master'
-    def rtServer = Artifactory.newServer url: ART_SERVER_URL, credentialsId: CREDENTIAL_ID
+    def rtServer = Artifactory.newServer url: ART_SERVER_URL, credentialsId: CREDENTIALS
     def rtDocker = Artifactory.docker server: rtServer
     def buildInfo = Artifactory.newBuildInfo()
     def tagDockerApp
