@@ -2,63 +2,18 @@
 <head>
     <title>Kubernetes Registry </title>
 </head>
-<style>
-    h1 {
-        font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-        font-size: 36px;
-        font-style: normal;
-        font-variant: normal;
-        font-weight: 500;
-        line-height: 36px;
-    }
-    h3 {
-        font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-        font-size: 14px;
-        font-style: normal;
-        font-variant: normal;
-        font-weight: 500;
-        line-height: 15px;
-    }
-    p {
-        font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-        font-size: 14px;
-        font-style: normal;
-        font-variant: normal;
-        font-weight: 400;
-        line-height: 20px;
-    }
-    blockquote {
-        font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-        font-size: 21px;
-        font-style: normal;
-        font-variant: normal;
-        font-weight: 400;
-        line-height: 30px;
-    }
-    pre {
-        font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-        font-size: 13px;
-        font-style: normal;
-        font-variant: normal;
-        font-weight: 400;
-        line-height: 18px;
-    }
-</style>
+<link rel="shortcut icon" type="image/png" href="/static/favicon.ico"/>
+<link href="/static/styles.css" rel="stylesheet">
 <body bgcolor=white>
-
 <table border="0" cellpadding="10">
     <tr>
         <h1 align="center">IT WORKED!</h1>
     </tr>
     <tr>
-        <center><img src="logo.png" align="center"></center>
+        <center><img src="static/logo.png" align="center"></center>
     </tr>
 </table>
 
-<center><p align="center"><h1>Be prepared to be amazed at KubeCon 2018!</h1></p><p id="date"></p></center>
-<script>
-    var date = new Date();
-    document.getElementById("date").innerHTML = date;
-</script>
+<center><p align="center"><h1>Be prepared to be amazed at KubeCon 2018!</h1></p><p><h1>Date: {{.Date}}</h1></p><h1>Host: {{.Host}}</h1></center>
 </body>
 </html>

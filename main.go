@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -22,7 +23,7 @@ func main() {
 
 	// register hello function to handle all requests
 	server := http.NewServeMux()
-	tmpl := template.Must(template.ParseFiles("layout.html"))
+	tmpl := template.Must(template.ParseFiles("static/index.html"))
 	fs := http.FileServer(http.Dir("static/"))
 	server.Handle("/static/", http.StripPrefix("/static/", fs))
 	server.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -36,9 +37,18 @@ func main() {
 		tmpl.Execute(w, data)
 	})
 
+	server.HandleFunc("/ping", hello)
+
+
 	// start the web server on port and accept requests
 	log.Printf("Server listening on port %s", port)
 	err := http.ListenAndServe(":"+port, server)
 	log.Fatal(err)
+}
+
+// ping responds to the request with a plain-text "Ok" message.
+func hello(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Serving request: %s", r.URL.Path)
+	fmt.Fprintf(w, "Ok")
 }
 
