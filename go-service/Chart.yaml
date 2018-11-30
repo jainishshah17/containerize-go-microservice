@@ -1,0 +1,21 @@
+apiVersion: v1
+name: go-service
+version: 0.1.0
+description: A basic Golang Application with HTTP server
+keywords:
+- http
+- jfrog
+- DevOps
+- artifactory
+- helm
+- kubernetes
+- web
+- npm
+- golang
+home: https://github.com/jainishshah17/containerize-go-microservice
+sources:
+- https://github.com/jainishshah17/containerize-go-microservice
+maintainers:
+- name: jainishshah17
+  email: jainishshah@yahoo.com
+icon: https://raw.githubusercontent.com/jainishshah17/containerize-go-microservice/master/static/logo.jpg
