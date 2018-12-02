@@ -1,4 +1,4 @@
-FROM REPOSITORY/golang:1.11.1-alpine
+FROM REPOSITORY/golang:1.11.2-alpine
 
 ENV PORT 8080
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+import groovy.json.JsonSlurper
+import hudson.FilePath
 
 node (SLAVE) {
 
@@ -16,8 +18,8 @@ node (SLAVE) {
 
     //Build docker image named containerize-go-microservice
     stage ('Build & Deploy') {
-            sh "sed -i 's/REPOSITORY/${ARTDOCKER_REGISTRY}/' Dockerfile"
-            tagDockerApp = "${ARTDOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
+            sh "sed -i 's/REPOSITORY/${ART_DOCKER_REGISTRY}/' Dockerfile"
+            tagDockerApp = "${ART_DOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
             println "containerize-go-microservice Build"
             docker.build(tagDockerApp)
             println "Docker push" + tagDockerApp + " : " + REPO
@@ -32,7 +34,7 @@ node (SLAVE) {
 
     //Test docker image
      stage ('Test') {
-            tagDockerApp = "${ARTDOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
+            tagDockerApp = "${ART_DOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
             if (testApp(tagDockerApp)) {
                   println "Setting property and promotion"
                   sh 'docker rmi '+tagDockerApp+' || true'
@@ -64,13 +66,15 @@ node (SLAVE) {
               'buildName'          : env.JOB_NAME,
               'buildNumber'        : env.BUILD_NUMBER,
               'targetRepo'         : PROMOTE_REPO,
-              'comment'            : 'App works with latest released version of gradle swampup app, tomcat and jdk',
+              'comment'            : 'App works',
               'sourceRepo'         : SOURCE_REPO,
               'status'             : 'Released',
               'includeDependencies': false,
               'copy'               : true
             ]
-            rtServer.promote promotionConfig
+            promoteBuild (SOURCE_REPO, PROMOTE_REPO, ART_SERVER_URL)
+
+            // rtServer.promote promotionConfig - occasionally will hang on dry run
             reTagLatest (SOURCE_REPO)
             reTagLatest (PROMOTE_REPO)
      }
@@ -120,4 +124,32 @@ def updateProperty (property) {
             println "Curl String is " + updatePropStr
             sh updatePropStr
      }
+}
+
+def promoteBuild (source_repo, promote_repo, SERVER_URL) {
+
+    def buildPromotion = """ {
+        "status"      : "Released",
+        "comment"     : "App works",
+        "ciUser"      : "jenkins",
+        "sourceRepo"  : "${source_repo}",
+        "targetRepo"  : "${promote_repo}",
+        "copy"        : true,
+        "dependencies" : false,
+        "failFast": true
+    }"""
+
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        def createPromo = ["curl", "-X", "POST", "-H", "Content-Type: application/json", "-d", "${buildPromotion }", "-u", "${env.USERNAME}:${env.PASSWORD}", "${SERVER_URL}/api/build/promote/${env.JOB_NAME}/${env.BUILD_NUMBER}"]
+        try {
+           def getPromoResponse = createPromo.execute().text
+           def jsonSlurper = new JsonSlurper()
+           def promoStatus = jsonSlurper.parseText("${getPromoResponse}")
+           if (promoStatus.error) {
+               println "Promotion failed: " + promoStatus
+           }
+        } catch (Exception e) {
+           println "Promotion failed: ${e.message}"
+        }
+    }
 }
