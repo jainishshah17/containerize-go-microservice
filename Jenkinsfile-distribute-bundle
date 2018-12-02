@@ -1,0 +1,68 @@
+#!/usr/bin/env groovy
+import groovy.json.JsonSlurper
+import groovy.json.JsonBuilder
+
+node {
+
+    def server_url = ART_SERVER_URL
+    def distribution_url = DIST_SERVER_URL
+    def releaseBundleVersion
+
+    stage ('Get latest Helm Chart Build Number') {
+        releaseBundleVersion = "0.1." + getLatestHelmChartBuildNumber(server_url)
+        println "Sending go-service:$releaseBundleVersion to edge nodes"
+    }
+
+    stage ('Distribute to Edge nodes') {
+        distributeToEdgeNodes (releaseBundleVersion, distribution_url)
+    }
+}
+
+def distributeToEdgeNodes (version, distribution_url) {
+   def distributePayload = """ {
+      "dry_run":"false",
+      "distribution_rules": [
+        {
+            "service_name": "edge*"
+        }
+      ]
+      }"""
+
+   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+       def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type:application/json", "-d", "${distributePayload}", "-u", "$USERNAME:$PASSWORD", "${distribution_url}distribution/go-service/$version"]
+
+       try {
+          def rbdnResponse = rbdnRequest.execute().text
+          println "Distribution Response is: " + rbdnResponse
+       } catch (Exception e) {
+          println "Caught exception when requesting distribution. Message ${e.message}"
+          throw e
+       }
+   }
+
+}
+
+def getLatestHelmChartBuildNumber (server_url) {
+
+    def aqlString = 'builds.find ({"name": {"$eq":"step2-create-helm-chart"}}).sort({"$desc":["created"]}).limit(1)'
+
+    File aqlFile = File.createTempFile("buildlatest", ".tmp")
+    aqlFile.deleteOnExit()
+
+    aqlFile << aqlString
+
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        def getLatestBuild = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
+
+        try {
+              def latestBuildInfo = getLatestBuild.execute().text
+              def jsonSlurper = new JsonSlurper()
+              def latestBuild = jsonSlurper.parseText("${latestBuildInfo}")
+              return latestBuild.results[0]['build.number']
+         } catch (Exception e) {
+             println "Caught exception finding latest helm chart build number. Message ${e.message}"
+             throw e
+         }
+     }
+
+}

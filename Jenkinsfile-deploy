@@ -18,6 +18,6 @@ node {
     stage('Deploy chart pulling from Artifactory') {
         /* Finally, we'll deploy the image to k8s using helm chart. this will pickup the latest chart */
 
-        sh "sudo helm upgrade my-go-service --install helm/go-service --set service.type=NodePort --set service.externalPort=30002 --set image.repository=jfrog.local:5001/containerize-go-microservice"
+        sh "sudo helm upgrade my-go-service --install helm/go-service --set service.type=NodePort --set service.externalPort=30002 --set image.repository=${ART_DOCKER_REGISTRY}/containerize-go-microservice"
     }
 }

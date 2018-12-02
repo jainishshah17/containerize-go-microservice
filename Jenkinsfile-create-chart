@@ -3,7 +3,7 @@ import groovy.json.JsonSlurper
 
 node (SLAVE) {
 
-    def IMAGE_TAG = getLatestDockerImage(SERVER_URL)
+    def IMAGE_TAG = getLatestDockerImage(ART_SERVER_URL)
 
     stage('Clone repository') {
         /* Let's make sure we have the repository cloned to our workspace */
@@ -19,15 +19,16 @@ node (SLAVE) {
         /* This installs and configure JFrog Cli */
         sh "curl -fL https://getcli.jfrog.io | sh"
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        sh "./jfrog rt config --url ${SERVER_URL} --user ${env.USERNAME} --password ${env.PASSWORD}"
+        sh "./jfrog rt config --url ${ART_SERVER_URL} --user ${env.USERNAME} --password ${env.PASSWORD}"
         }
     }
 
     stage('Build Chart & push it to Artifactory repo') {
         /* Configure helm client to point to k8s cluster */
-         sh "./linux-amd64/helm init"
+         sh "./linux-amd64/helm init -c"
          sh "sed -i 's/0.1.0/0.1.${env.BUILD_NUMBER}/' go-service/Chart.yaml"
          sh "sed -i 's/latest/${IMAGE_TAG}/g' go-service/values.yaml"
+         sh "rm *.tgz"
          sh "./linux-amd64/helm package ./go-service/"
          sh "./jfrog rt u '*.tgz' ${REPO} --build-name=${env.JOB_NAME} --build-number=${env.BUILD_NUMBER}"
          sh "./jfrog rt bce ${env.JOB_NAME} ${env.BUILD_NUMBER}"
