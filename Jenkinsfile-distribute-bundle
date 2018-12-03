@@ -4,21 +4,19 @@ import groovy.json.JsonBuilder
 
 node {
 
-    def server_url = ART_SERVER_URL
-    def distribution_url = DIST_SERVER_URL
     def releaseBundleVersion
 
     stage ('Get latest Helm Chart Build Number') {
-        releaseBundleVersion = "0.1." + getLatestHelmChartBuildNumber(server_url)
+        releaseBundleVersion = "0.1." + getLatestHelmChartBuildNumber(ART_SERVER_URL)
         println "Sending go-service:$releaseBundleVersion to edge nodes"
     }
 
     stage ('Distribute to Edge nodes') {
-        distributeToEdgeNodes (releaseBundleVersion, distribution_url)
+        distributeToEdgeNodes (releaseBundleVersion, DIST_SERVER_URL)
     }
 }
 
-def distributeToEdgeNodes (version, distribution_url) {
+def distributeToEdgeNodes (version, DIST_SERVER_URL) {
    def distributePayload = """ {
       "dry_run":"false",
       "distribution_rules": [
@@ -29,7 +27,7 @@ def distributeToEdgeNodes (version, distribution_url) {
       }"""
 
    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-       def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type:application/json", "-d", "${distributePayload}", "-u", "$USERNAME:$PASSWORD", "${distribution_url}distribution/go-service/$version"]
+       def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type:application/json", "-d", "${distributePayload}", "-u", "$USERNAME:$PASSWORD", "${DIST_SERVER_URL}/distribution/go-service/$version"]
 
        try {
           def rbdnResponse = rbdnRequest.execute().text
@@ -42,7 +40,7 @@ def distributeToEdgeNodes (version, distribution_url) {
 
 }
 
-def getLatestHelmChartBuildNumber (server_url) {
+def getLatestHelmChartBuildNumber (ART_SERVER_URL) {
 
     def aqlString = 'builds.find ({"name": {"$eq":"step2-create-helm-chart"}}).sort({"$desc":["created"]}).limit(1)'
 
@@ -52,7 +50,7 @@ def getLatestHelmChartBuildNumber (server_url) {
     aqlFile << aqlString
 
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def getLatestBuild = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
+        def getLatestBuild = "curl -u$USERNAME:$PASSWORD -X POST " + ART_SERVER_URL + "/api/search/aql -T " + aqlFile.getAbsolutePath()
 
         try {
               def latestBuildInfo = getLatestBuild.execute().text
