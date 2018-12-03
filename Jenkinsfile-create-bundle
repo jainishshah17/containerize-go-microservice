@@ -2,10 +2,8 @@
 import groovy.json.JsonSlurper
 import groovy.json.JsonBuilder
 
-node (SLAVE) {
+node(SLAVE) {
 
-    def server_url = "${ART_SERVER_URL}"
-    def distribution_url = "${DIST_SERVER_URL}"
     def latestBuildNumber
     def helmChartName
     def chartVersion
@@ -13,45 +11,45 @@ node (SLAVE) {
     def dockerImage
     def sourceArtifactoryId
 
-   stage ('Get Helm Chart Latest Build Information') {
-       latestBuildNumber = getLatestHelmChartBuildNumber(server_url)
-       helmChartName = getBuildHelmChartName(server_url, latestBuildNumber)
-       chartVersion = getChartVersion(server_url, helmChartName)
-       dockerManifestChecksum =  getBuildDockerImageManifestChecksum(server_url, latestBuildNumber)
-       dockerImage = getDockerImageFromManifestChecksum(server_url, dockerManifestChecksum)
-       println "Creating release bundle for helmChart: " + helmChartName + " and docker image: " + dockerImage
+    stage('Get Helm Chart Latest Build Information') {
+        latestBuildNumber = getLatestHelmChartBuildNumber(ART_SERVER_URL)
+        helmChartName = getBuildHelmChartName(ART_SERVER_URL, latestBuildNumber)
+        chartVersion = getChartVersion(ART_SERVER_URL, helmChartName)
+        dockerManifestChecksum = getBuildDockerImageManifestChecksum(ART_SERVER_URL, latestBuildNumber)
+        dockerImage = getDockerImageFromManifestChecksum(ART_SERVER_URL, dockerManifestChecksum)
+        println "Creating release bundle for helmChart: " + helmChartName + " and docker image: " + dockerImage
     }
 
-    stage ('Get Source Artifactory Id') {
+    stage('Get Source Artifactory Id') {
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-            def getServiceIdCommand = ["curl", "-s", "-u$USERNAME:$PASSWORD", "$server_url/api/system/service_id"]
+            def getServiceIdCommand = ["curl", "-s", "-u$USERNAME:$PASSWORD", "${ART_SERVER_URL}/api/system/service_id"]
             sourceArtifactoryId = getServiceIdCommand.execute().text
         }
     }
 
-    stage ('Create Release Bundle') {
-        createHelmRBDN (sourceArtifactoryId, chartVersion, helmChartName, dockerImage, distribution_url)
+    stage('Create Release Bundle') {
+        createHelmRBDN(sourceArtifactoryId, chartVersion, helmChartName, dockerImage, DIST_SERVER_URL)
     }
 
-    stage ('Sign Release Bundle') {
+    stage('Sign Release Bundle') {
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-           def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type: application/json", "-u", "$USERNAME:$PASSWORD", "${distribution_url}release_bundle/go-service/${chartVersion}/sign"]
+            def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type: application/json", "-u", "$USERNAME:$PASSWORD", "${DIST_SERVER_URL}/release_bundle/go-service/${chartVersion}/sign"]
 
-           try {
-              def rbdnResponse = rbdnRequest.execute().text
-              println "Release Bundle Sign Response is: " + rbdnResponse
-           } catch (Exception e) {
-              println "Caught exception trying to sign release bundle. Message ${e.message}"
-              throw e
-           }
+            try {
+                def rbdnResponse = rbdnRequest.execute().text
+                println "Release Bundle Sign Response is: " + rbdnResponse
+            } catch (Exception e) {
+                println "Caught exception trying to sign release bundle. Message ${e.message}"
+                throw e
+            }
         }
     }
 }
 
-def createHelmRBDN (sourceArtifactoryId, chartVersion, latestName, dockerImage, distribution_url) {
-   def aqlhelmString = "items.find({\\\"repo\\\":\\\"helm-local\\\",\\\"name\\\":\\\"" + latestName + "\\\"})"
-   def aqldockerAppString = "items.find({\\\"repo\\\":\\\"docker-prod-local\\\",\\\"path\\\":\\\"" + dockerImage + "\\\"})"
-   def releaseBundle = """ {
+def createHelmRBDN(sourceArtifactoryId, chartVersion, latestName, dockerImage, DIST_SERVER_URL) {
+    def aqlhelmString = "items.find({\\\"repo\\\":\\\"helm-dev-local\\\",\\\"name\\\":\\\"" + latestName + "\\\"})"
+    def aqldockerAppString = "items.find({\\\"repo\\\":\\\"docker-prod-local\\\",\\\"path\\\":\\\"" + dockerImage + "\\\"})"
+    def releaseBundle = """ {
       "name":"go-service",
       "version": "${chartVersion}",
       "description":"Sample Docker App build",
@@ -69,85 +67,36 @@ def createHelmRBDN (sourceArtifactoryId, chartVersion, latestName, dockerImage, 
       }
    }"""
 
-   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-       def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type: application/json", "-d", "${releaseBundle}", "-u", "$USERNAME:$PASSWORD", "${distribution_url}release_bundle"]
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        def rbdnRequest = ["curl", "-X", "POST", "-H", "Content-Type: application/json", "-d", "${releaseBundle}", "-u", "$USERNAME:$PASSWORD", "${DIST_SERVER_URL}/release_bundle"]
 
-       try {
-          def rbdnResponse = rbdnRequest.execute().text
-          println "Release Bundle Response is: " + rbdnResponse
-       } catch (Exception e) {
-          println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
-          throw e
-       }
+        try {
+            def rbdnResponse = rbdnRequest.execute().text
+            println "Release Bundle Response is: " + rbdnResponse
+        } catch (Exception e) {
+            println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
+            throw e
+        }
     }
 
 }
 
 def getChartVersion (server_url, latestVersion) {
-   def aqlString = 'items.find({"repo":"helm-local","path":".","name":"' + latestVersion + '"}).include("name","@chart.version")'
+    def aqlString = 'items.find({"repo":"helm-dev-local","path":".","name":"' + latestVersion + '"}).include("name","@chart.version")'
 
-   File aqlFile = File.createTempFile("chartversion", ".json")
-   aqlFile.deleteOnExit()
+    File aqlFile = File.createTempFile("chartversion", ".json")
+    aqlFile.deleteOnExit()
 
-   aqlFile << aqlString
+    aqlFile << aqlString
 
-   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
 
-       def getLatestChart = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
-       try {
-          def helmchartinfo = getLatestChart.execute().text
-          def jsonSlurper = new JsonSlurper()
-          def latestChart = jsonSlurper.parseText("${helmchartinfo}")
-          return latestChart.results[0].properties[0].value
-       } catch (Exception e) {
-          println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
-          throw e
-       }
-   }
-}
-
-
-def getLatestHelmChartVersion (server_url) {
-
-   def aqlString = 'items.find({"repo":"helm-local","@chart.name":"go-service","@release-bundle":"true"}).sort({"\$desc" : ["created"]}).limit(1)'
-
-   File aqlFile = File.createTempFile("helmchartlatest", ".tmp")
-   aqlFile.deleteOnExit()
-
-   aqlFile << aqlString
-
-   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-       def getLatestChart = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
-
-       try {
-          def helmchartinfo = getLatestChart.execute().text
-          def jsonSlurper = new JsonSlurper()
-          def latestChart = jsonSlurper.parseText("${helmchartinfo}")
-          return latestChart.results[0].name
-       } catch (Exception e) {
-          println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
-          throw e
-       }
-   }
-}
-
-def getDockerImageFromManifestChecksum (server_url, checksum) {
-
-   def aqlString = 'items.find ({ "repo":"docker-prod-local","actual_sha1":"' + checksum + '", "path":{"$ne":"containerize-go-microservice/latest"}})'
-
-   File aqlFile = File.createTempFile("dockerlatest", ".tmp")
-   aqlFile.deleteOnExit()
-
-   aqlFile << aqlString
-
-   withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-       def getLatestImage = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
-
-       try {
-             def imageinfo = getLatestImage.execute().text
-             def jsonSlurper = new JsonSlurper()
-             def latestImage = jsonSlurper.parseText("${imageinfo}")
-             return latestImage.results[0].path
+        def getLatestChart = "curl -u$USERNAME:$PASSWORD -X POST " + ART_SERVER_URL + "/api/search/aql -T " + aqlFile.getAbsolutePath()
+        try {
+            def helmchartinfo = getLatestChart.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def latestChart = jsonSlurper.parseText("${helmchartinfo}")
+            return latestChart.results[0].properties[0].value
         } catch (Exception e) {
             println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
             throw e
@@ -155,39 +104,88 @@ def getDockerImageFromManifestChecksum (server_url, checksum) {
     }
 }
 
-def getBuildDockerImageManifestChecksum (server_url, build_number) {
+
+def getLatestHelmChartVersion(ART_SERVER_URL) {
+
+    def aqlString = 'items.find({"repo":"helm-dev-local","@chart.name":"go-service","@release-bundle":"true"}).sort({"\$desc" : ["created"]}).limit(1)'
+
+    File aqlFile = File.createTempFile("helmchartlatest", ".tmp")
+    aqlFile.deleteOnExit()
+
+    aqlFile << aqlString
+
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def getBuildInfo = "curl -u$USERNAME:$PASSWORD " + server_url + "/api/build/step2-create-helm-chart/$build_number"
+        def getLatestChart = "curl -u$USERNAME:$PASSWORD -X POST " + ART_SERVER_URL + "/api/search/aql -T " + aqlFile.getAbsolutePath()
 
         try {
-              def buildInfoText = getBuildInfo.execute().text
-              def jsonSlurper = new JsonSlurper()
-              def buildInfo = jsonSlurper.parseText("${buildInfoText}")
-              return buildInfo.buildInfo.modules[0].dependencies.find{it.id == "manifest.json"}.sha1
-         } catch (Exception e) {
-             println "Caught exception finding latest helm chart build number. Message ${e.message}"
-             throw e
-         }
+            def helmchartinfo = getLatestChart.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def latestChart = jsonSlurper.parseText("${helmchartinfo}")
+            return latestChart.results[0].name
+        } catch (Exception e) {
+            println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
+            throw e
+        }
     }
 }
 
-def getBuildHelmChartName (server_url, build_number) {
+def getDockerImageFromManifestChecksum(ART_SERVER_URL, checksum) {
+
+    def aqlString = 'items.find ({ "repo":"docker-prod-local","actual_sha1":"' + checksum + '", "path":{"$ne":"containerize-go-microservice/latest"}})'
+
+    File aqlFile = File.createTempFile("dockerlatest", ".tmp")
+    aqlFile.deleteOnExit()
+
+    aqlFile << aqlString
+
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def getBuildInfo = "curl -u$USERNAME:$PASSWORD " + server_url + "/api/build/step2-create-helm-chart/$build_number"
+        def getLatestImage = "curl -u$USERNAME:$PASSWORD -X POST " + ART_SERVER_URL + "/api/search/aql -T " + aqlFile.getAbsolutePath()
 
         try {
-              def buildInfoText = getBuildInfo.execute().text
-              def jsonSlurper = new JsonSlurper()
-              def buildInfo = jsonSlurper.parseText("${buildInfoText}")
-              return buildInfo.buildInfo.modules[0].artifacts[0].name
-         } catch (Exception e) {
-             println "Caught exception finding latest helm chart build number. Message ${e.message}"
-             throw e
-         }
+            def imageinfo = getLatestImage.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def latestImage = jsonSlurper.parseText("${imageinfo}")
+            return latestImage.results[0].path
+        } catch (Exception e) {
+            println "Caught exception finding latest containerize-go-microservice helm chart. Message ${e.message}"
+            throw e
+        }
     }
 }
 
-def getLatestHelmChartBuildNumber (server_url) {
+def getBuildDockerImageManifestChecksum(ART_SERVER_URL, build_number) {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        def getBuildInfo = "curl -u$USERNAME:$PASSWORD " + ART_SERVER_URL + "/api/build/step2-create-helm-chart/$build_number"
+
+        try {
+            def buildInfoText = getBuildInfo.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def buildInfo = jsonSlurper.parseText("${buildInfoText}")
+            return buildInfo.buildInfo.modules[0].dependencies.find { it.id == "manifest.json" }.sha1
+        } catch (Exception e) {
+            println "Caught exception finding latest helm chart build number. Message ${e.message}"
+            throw e
+        }
+    }
+}
+
+def getBuildHelmChartName(ART_SERVER_URL, build_number) {
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        def getBuildInfo = "curl -u$USERNAME:$PASSWORD " + ART_SERVER_URL + "/api/build/step2-create-helm-chart/$build_number"
+
+        try {
+            def buildInfoText = getBuildInfo.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def buildInfo = jsonSlurper.parseText("${buildInfoText}")
+            return buildInfo.buildInfo.modules[0].artifacts[0].name
+        } catch (Exception e) {
+            println "Caught exception finding latest helm chart build number. Message ${e.message}"
+            throw e
+        }
+    }
+}
+
+def getLatestHelmChartBuildNumber(ART_SERVER_URL) {
 
     def aqlString = 'builds.find ({"name": {"$eq":"step2-create-helm-chart"}}).sort({"$desc":["created"]}).limit(1)'
 
@@ -197,17 +195,17 @@ def getLatestHelmChartBuildNumber (server_url) {
     aqlFile << aqlString
 
     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def getLatestBuild = "curl -u$USERNAME:$PASSWORD -X POST " + server_url + "/api/search/aql -T " + aqlFile.getAbsolutePath()
+        def getLatestBuild = "curl -u$USERNAME:$PASSWORD -X POST " + ART_SERVER_URL + "/api/search/aql -T " + aqlFile.getAbsolutePath()
 
         try {
-              def latestBuildInfo = getLatestBuild.execute().text
-              def jsonSlurper = new JsonSlurper()
-              def latestBuild = jsonSlurper.parseText("${latestBuildInfo}")
-              return latestBuild.results[0]['build.number']
-         } catch (Exception e) {
-             println "Caught exception finding latest helm chart build number. Message ${e.message}"
-             throw e
-         }
-     }
+            def latestBuildInfo = getLatestBuild.execute().text
+            def jsonSlurper = new JsonSlurper()
+            def latestBuild = jsonSlurper.parseText("${latestBuildInfo}")
+            return latestBuild.results[0]['build.number']
+        } catch (Exception e) {
+            println "Caught exception finding latest helm chart build number. Message ${e.message}"
+            throw e
+        }
+    }
 
 }
