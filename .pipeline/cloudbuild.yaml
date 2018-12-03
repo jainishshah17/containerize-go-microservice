@@ -1,0 +1,42 @@
+# Sample cloudbuild.yaml that can containerize a Java app with JFrog Artifactory as a source of truth.
+# NOTE: JFrog cloud builder image should exist. cloudbuild.yaml to build JFrog cloud builder image exists one level up.
+
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit . --config=cloudbuild.yaml
+
+
+steps:
+
+# Configure JFrog CLI to point to JFrog Artifactory
+- name: 'gcr.io/$PROJECT_ID/java/jfrog'
+  entrypoint: 'bash'
+  args: ['-c', 'jfrog rt c rt-repo --url=$${ART_SERVER_URL} --user=$${USER} --password=$${PASSWORD}']
+  secretEnv: ['APIKEY']
+  dir: 'go-example'
+
+# Capture Build Environment Variables
+- name: 'gcr.io/$PROJECT_ID/java/jfrog'
+  args: ['rt', 'bce', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  dir: 'go-example'
+
+# Download Dependencies
+- name: 'gcr.io/$PROJECT_ID/java/jfrog'
+  args: ['rt', 'dl', 'docker-prod-local/containerize-go-microservice/latest/manifest.json', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  dir: 'go-example'
+
+
+# Publish Build Information
+- name: 'gcr.io/$PROJECT_ID/java/jfrog'
+  args: ['rt', 'bp', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  dir: 'go-example'
+
+# Containerize java app
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '--tag=gcr.io/$PROJECT_ID/go-app:${BUILD_ID}'
+  - '.'
+  dir: 'go-example'
+
+images:
+- 'gcr.io/$PROJECT_ID/go-app:${BUILD_ID}'
