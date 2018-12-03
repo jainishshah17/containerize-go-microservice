@@ -28,7 +28,6 @@ node (SLAVE) {
          sh "./linux-amd64/helm init -c"
          sh "sed -i 's/0.1.0/0.1.${env.BUILD_NUMBER}/' go-service/Chart.yaml"
          sh "sed -i 's/latest/${IMAGE_TAG}/g' go-service/values.yaml"
-         sh "rm *.tgz"
          sh "./linux-amd64/helm package ./go-service/"
          sh "./jfrog rt u '*.tgz' ${REPO} --build-name=${env.JOB_NAME} --build-number=${env.BUILD_NUMBER}"
          sh "./jfrog rt bce ${env.JOB_NAME} ${env.BUILD_NUMBER}"
