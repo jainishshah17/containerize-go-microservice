@@ -2,10 +2,10 @@
 import groovy.json.JsonSlurper
 import groovy.json.JsonBuilder
 
-node {
+node (SLAVE) {
 
-    def server_url = ART_SERVER_URL
-    def distribution_url = DIST_SERVER_URL
+    def server_url = "${ART_SERVER_URL}"
+    def distribution_url = "${DIST_SERVER_URL}"
     def latestBuildNumber
     def helmChartName
     def chartVersion
