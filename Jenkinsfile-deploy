@@ -15,7 +15,7 @@ node {
         /* Configure helm client to point to k8s cluster */
          withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
            sh "./linux-amd64/helm version"
-           sh "./linux-amd64/helm repo add helm ${ART_SERVER_URL}/helm/ --username $USERNAME --password $PASSWORD"
+           sh "./linux-amd64/helm repo add helm ${ART_SERVER_URL}/${HELM_REPO}/ --username $USERNAME --password $PASSWORD"
            sh "./linux-amd64/helm repo update"
          }
     }
