@@ -11,7 +11,6 @@ steps:
 - name: 'gcr.io/$PROJECT_ID/java/jfrog'
   entrypoint: 'bash'
   args: ['-c', 'jfrog rt c rt-repo --url=$${ART_SERVER_URL} --user=$${USER} --password=$${PASSWORD}']
-  secretEnv: ['APIKEY']
   dir: 'go-example'
 
 # Capture Build Environment Variables
