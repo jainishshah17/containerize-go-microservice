@@ -16,18 +16,18 @@ steps:
 
 # Capture Build Environment Variables
 - name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'bce', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  args: ['rt', 'bce', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
   dir: 'go-example'
 
 # Download Dependencies
 - name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'dl', 'docker-prod-local/containerize-go-microservice/latest/manifest.json', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  args: ['rt', 'dl', 'docker-prod-local/containerize-go-microservice/latest/manifest.json', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
   dir: 'go-example'
 
 
 # Publish Build Information
 - name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'bp', '--build-name=mybuild', '--build-number=$BUILD_ID']
+  args: ['rt', 'bp', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
   dir: 'go-example'
 
 # Containerize java app
