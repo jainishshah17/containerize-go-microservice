@@ -72,9 +72,9 @@ node (SLAVE) {
               'includeDependencies': false,
               'copy'               : true
             ]
-            promoteBuild (SOURCE_REPO, PROMOTE_REPO, ART_SERVER_URL)
+            // promoteBuild (SOURCE_REPO, PROMOTE_REPO, ART_SERVER_URL)
 
-            // rtServer.promote promotionConfig - occasionally will hang on dry run
+            rtServer.promote promotionConfig
             reTagLatest (SOURCE_REPO)
             reTagLatest (PROMOTE_REPO)
      }
