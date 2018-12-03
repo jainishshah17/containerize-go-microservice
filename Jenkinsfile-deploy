@@ -7,17 +7,22 @@ node {
     def latestVersionName
 
     stage('Configure helm & add Artifactory repo') {
+         /* This installs helm client */
+        sh "curl -O https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz"
+        sh "tar -xvf helm-v2.9.1-linux-amd64.tar.gz"
+        sh "chmod 777 ./linux-amd64/helm"
+        sh "./linux-amd64/helm init"
         /* Configure helm client to point to k8s cluster */
          withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-           sh "sudo helm version"
-           sh "sudo helm repo add helm ${ART_SERVER_URL}/helm/ --username $USERNAME --password $PASSWORD"
-           sh "sudo helm repo update"
+           sh "./linux-amd64/helm version"
+           sh "./linux-amd64/helm repo add helm ${ART_SERVER_URL}/helm/ --username $USERNAME --password $PASSWORD"
+           sh "./linux-amd64/helm repo update"
          }
     }
 
     stage('Deploy chart pulling from Artifactory') {
         /* Finally, we'll deploy the image to k8s using helm chart. this will pickup the latest chart */
 
-        sh "sudo helm upgrade my-go-service --install helm/go-service --set service.type=NodePort --set service.externalPort=30002 --set image.repository=${ART_DOCKER_REGISTRY}/containerize-go-microservice"
+        sh "./linux-amd64/helm upgrade my-go-service --install helm/go-service --set image.repository=${ART_DOCKER_REGISTRY}/containerize-go-microservice"
     }
 }
