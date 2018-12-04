@@ -69,7 +69,7 @@ steps:
 
 # Push Helm chart to JFrog Artifactory using JFrog CLI
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-  args: ['rt', 'u', './*.tgz', '${_HELM_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  args: ['rt', 'u', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID', './*.tgz', '${_HELM_REPO}']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
