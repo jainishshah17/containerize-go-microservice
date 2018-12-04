@@ -15,46 +15,37 @@ steps:
     - "JFROG_CLI_HOME_DIR=./"
   id: 'setup_environment'
 
-# Run Test
-- name: 'gcr.io/cloud-builders/go:alpine'
-  args: ['test']
-  env: ['PROJECT_ROOT=github.com/jainishshah17/containerize-go-microservice']
-  id: 'build_test_app'
-
-# build docker image with two tags:
-# latest and commit sha
-- name: 'gcr.io/cloud-builders/docker'
-  args:
-  - 'build'
-  - '--rm'
-  - '--no-cache'
-#  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:latest'
-  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:$BUILD_ID'
-  - '.'
-  id: 'containerize_app'
-  waitFor:
-  - 'build_test_app'
-
-
-# Push docker image to JFrog Artifactory using JFrog CLI
+# Lint Helm chart
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:$BUILD_ID', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  entrypoint: 'bash'
+  args: [ '-c', 'helm lint go-service' ]
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
-  id: 'push_static_tag'
+  id: 'lint_helm_chart'
   waitFor:
-  - 'containerize_app'
+  - 'setup_environment'
 
-## Push latest docker image to JFrog Artifactory using JFrog CLI
-#- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-#  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:latest', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
-#  env:
-#  - "JFROG_CLI_TEMP_DIR=./"
-#  - "JFROG_CLI_HOME_DIR=./"
-#  id: 'push_dynamic_tag'
-#  waitFor:
-#  - 'push_static_tag'
+# Build Helm chart
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  entrypoint: 'bash'
+  args: [ '-c', 'helm package go-service --save=false' ]
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'build_helm_chart'
+  waitFor:
+  - 'lint_helm_chart'
+
+# Push Helm chart to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'u', 'go-service*.tgz', '${_HELM_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID',]
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'push_helm_chart'
+  waitFor:
+  - 'build_helm_chart'
 
 # Capture Build Information
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
@@ -64,7 +55,7 @@ steps:
   - "JFROG_CLI_HOME_DIR=./"
   id: 'capture_build_info'
   waitFor:
-  - 'push_static_tag'
+  - 'push_helm_chart'
 
 # Publish Build Information to Artifactory
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
@@ -88,7 +79,7 @@ steps:
 
 # Promote Build
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-  args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_DOCKER_PROD_REPO}','--status=Released', '--comment=Tested.' ]
+  args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_HELM_PROD_REPO}','--status=Released', '--comment=Tested.' ]
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
