@@ -54,7 +54,25 @@ steps:
   waitFor:
   - 'push_static_tag'
 
-# Build and Push Helm chart
+# Build Helm chart
+- name: 'jainishshah17/google-cloud-builder-helm:2.10.0'
+  args: [ 'package', 'go-service' ]
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'build_helm_chart'
+  waitFor:
+  - 'push_static_tag'
+
+# Push Helm chart to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'u', '*.tgz', '${_HELM_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'push_helm_chart'
+  waitFor:
+  - 'build_helm_chart'
 
 # Capture Build Information
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
@@ -64,7 +82,7 @@ steps:
   - "JFROG_CLI_HOME_DIR=./"
   id: 'capture_build_info'
   waitFor:
-  - 'push_dynamic_tag'
+  - 'push_helm_chart'
 
 # Publish Build Information to Artifactory
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'

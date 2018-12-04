@@ -1,0 +1,9 @@
+# Sample cloudbuild.yaml that can containerize a Java app with JFrog Artifactory as a source of truth.
+# NOTE: JFrog cloud builder image should exist. cloudbuild.yaml to build JFrog cloud builder image exists one level up.
+
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit . --config=cloudbuild.yaml
+
+
+steps:
+
