@@ -59,7 +59,7 @@ steps:
 # Build Helm chart
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
-  args: [ '-c', 'helm package go-service' ]
+  args: [ '-c', 'helm package go-service --save=false' ]
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
