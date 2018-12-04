@@ -26,6 +26,8 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args:
   - 'build'
+  - '--rm'
+  - '--no-cache'
   - '--tag=kubecon-docker.jfrog.team/go-app:latest'
   - '--tag=kubecon-docker.jfrog.team/go-app:$BUILD_ID'
   - '.'
