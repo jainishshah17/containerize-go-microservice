@@ -62,6 +62,9 @@ steps:
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
+  - "CLOUDSDK_COMPUTE_ZONE=test"
+  - "CLOUDSDK_CONTAINER_CLUSTER=test"
+  - "CLOUDSDK_COMPUTE_REGION=test"
   id: 'build_helm_chart'
   waitFor:
   - 'push_static_tag'
