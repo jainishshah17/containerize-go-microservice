@@ -8,34 +8,90 @@
 steps:
 
 # Configure JFrog CLI to point to JFrog Artifactory
-- name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  entrypoint: 'bash'
-  args: ['-c', 'jfrog rt c rt-repo --url=$${ART_SERVER_URL} --user=$${USER} --password=$${PASSWORD}']
-  dir: 'go-example'
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'c', 'art-repo', '--url=${_ARTIFACTORY_URL}', '--user=${_USER}', '--password=${_PASSWORD}']
+  env:
+    - "JFROG_CLI_TEMP_DIR=./"
+    - "JFROG_CLI_HOME_DIR=./"
+  id: 'configure_artifactory'
 
-# Capture Build Environment Variables
-- name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'bce', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
-  dir: 'go-example'
+# Run Test
+- name: 'gcr.io/cloud-builders/go:alpine'
+  args: ['test']
+  env: ['PROJECT_ROOT=github.com/jainishshah17/containerize-go-microservice']
+  id: 'test'
 
-# Download Dependencies
-- name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'dl', 'docker-prod-local/containerize-go-microservice/latest/manifest.json', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
-  dir: 'go-example'
-
-
-# Publish Build Information
-- name: 'gcr.io/$PROJECT_ID/java/jfrog'
-  args: ['rt', 'bp', '--build-name=$${BUILD_NAME}', '--build-number=$BUILD_ID']
-  dir: 'go-example'
-
-# Containerize java app
+# build docker image with two tags:
+# latest and commit sha
 - name: 'gcr.io/cloud-builders/docker'
   args:
   - 'build'
-  - '--tag=gcr.io/$PROJECT_ID/go-app:${BUILD_ID}'
+  - '--tag=kubecon-docker.jfrog.team/go-app:latest'
+  - '--tag=kubecon-docker.jfrog.team/go-app:$BUILD_ID'
   - '.'
-  dir: 'go-example'
+  id: 'build_image'
+  waitFor:
+  - 'test'
 
-images:
-- 'gcr.io/$PROJECT_ID/go-app:${BUILD_ID}'
+
+# Push docker image to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/go-app:$BUILD_ID', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'push_image_static'
+  waitFor:
+  - 'build_image'
+
+# Push latest docker image to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/go-app:latest', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'push_image_dynamic'
+  waitFor:
+  - 'push_image_static'
+
+# Capture Build Information
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'bce', '${_BUILD_NAME}', '$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'capture_build_info'
+  waitFor:
+  - 'push_image_dynamic'
+
+# Publish Build Information to Artifactory
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'bp', '${_BUILD_NAME}', '$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'publish_build_info'
+  waitFor:
+  - 'capture_build_info'
+
+# Scan Build using JFrog Xray
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'bs', '${_BUILD_NAME}', '$BUILD_ID']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'scan_build'
+  waitFor:
+  - 'publish_build_info'
+
+
+
+# Promote Build
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_DOCKER_PROD_REPO}', '--status=Released', '--comment=Tested.' ]
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'promote_build'
+  waitFor:
+  - 'scan_build'
