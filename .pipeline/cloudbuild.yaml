@@ -28,8 +28,8 @@ steps:
   - 'build'
   - '--rm'
   - '--no-cache'
-#  - '--tag=kubecon-docker.jfrog.team/go-app:latest'
-  - '--tag=kubecon-docker.jfrog.team/go-app:$BUILD_ID'
+#  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:latest'
+  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:$BUILD_ID'
   - '.'
   id: 'containerize_app'
   waitFor:
@@ -38,7 +38,7 @@ steps:
 
 # Push docker image to JFrog Artifactory using JFrog CLI
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/go-app:$BUILD_ID', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:$BUILD_ID', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
@@ -48,7 +48,7 @@ steps:
 
 ## Push latest docker image to JFrog Artifactory using JFrog CLI
 #- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-#  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/go-app:latest', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
+#  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:latest', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
 #  env:
 #  - "JFROG_CLI_TEMP_DIR=./"
 #  - "JFROG_CLI_HOME_DIR=./"
