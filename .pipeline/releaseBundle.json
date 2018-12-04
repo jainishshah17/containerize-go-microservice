@@ -1,0 +1,17 @@
+{
+  "name":"go-service",
+  "version": "VERSION",
+  "description":"Sample Docker App build",
+  "dry_run":"false",
+  "spec": {
+    "source_artifactory_id": "ART_ID",
+    "queries":[
+      {
+        "aql": "items.find({\"repo\": \"docker-prod-local\",\"path\": \"containerize-go-microservice/DOCKER_TAG\"})"
+      },
+      {
+        "aql": "items.find({\"repo\":\"helm-local\",\"name\":\"HELM_CHART\"})"
+      }
+    ]
+  }
+}

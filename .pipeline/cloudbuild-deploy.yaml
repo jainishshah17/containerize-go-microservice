@@ -4,6 +4,22 @@
 # In this directory, run the following command to build this builder.
 # $ gcloud builds submit . --config=cloudbuild.yaml
 
-
 steps:
 
+# Push docker image to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  entrypoint: 'bash'
+  args: ['-c', 'sed -E "s/VERSION/${_BUNDLE_VERSION}/g; s/ART_ID/${_SOURCE_ART_ID}/g; s/HELM_CHART/${_HELM_CHART}/g; s/DOCKER_TAG/${_DOCKER_IMAGE_TAG}/g" .pipeline/releaseBundle.json > .pipeline/bundle.json']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'prepare_aql_query'
+
+# Push docker image to JFrog Artifactory using JFrog CLI
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  entrypoint: 'bash'
+  args: [ '-c', 'curl -X POST -u ${_USER}:${_PASSWORD} -H "Content-Type: application/json" "${_DIST_URL}/api/v1/release_bundle -d .pipeline/releaseBunle.json']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'create_release_bundle'
