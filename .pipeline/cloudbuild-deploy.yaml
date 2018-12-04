@@ -36,3 +36,14 @@ steps:
   id: 'sign_release_bundle'
   waitFor:
   - 'create_release_bundle'
+
+# Distribute Release Bundle To Edge Nodes
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  entrypoint: 'bash'
+  args: [ '-c', 'curl -X POST -H "Content-Type: application/json" -u ${_USER}:${_PASSWORD} ${_DIST_URL}/api/v1/distribution/go-service/${_BUNDLE_VERSION} -T .pipeline/distribution.json']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'distribute_release_bundle'
+  waitFor:
+  - 'sign_release_bundle'
