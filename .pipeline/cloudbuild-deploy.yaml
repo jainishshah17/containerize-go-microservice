@@ -18,7 +18,7 @@ steps:
 # Push docker image to JFrog Artifactory using JFrog CLI
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
-  args: [ '-c', 'curl -X POST -u ${_USER}:${_PASSWORD} -H "Content-Type: application/json" ${_DIST_URL}/api/v1/release_bundle -d .pipeline/releaseBunle.json']
+  args: [ '-c', 'curl -X POST -u ${_USER}:${_PASSWORD} -H "Content-Type: application/json" ${_DIST_URL}/api/v1/release_bundle -T .pipeline/bundle.json']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
