@@ -1,9 +1,9 @@
-FROM kubecon-docker.jfrog.team/golang:1.11.2-alpine
+FROM kubecon-docker.jfrog.team/golang:1.11.2-stretch
 
 ENV PORT 8080
 
 # Install dependencies
-RUN apk update && apk add --update gcc git musl-dev curl
+RUN apt-get update && apt-get install -y gcc git musl-dev curl
 
 # Notice the backslash in \$latest, ref: https://github.com/jfrog/jfrog-cli-go/issues/96
 RUN curl -Lo /usr/bin/jfrog https://api.bintray.com/content/jfrog/jfrog-cli-go/\$latest/jfrog-cli-linux-386/jfrog?bt_package=jfrog-cli-linux-386 \
