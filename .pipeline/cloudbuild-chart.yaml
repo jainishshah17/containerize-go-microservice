@@ -79,7 +79,7 @@ steps:
 
 # Promote Build
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
-  args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_HELM_PROD_REPO}','--status=Released', '--comment=Tested.' ]
+  args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_HELM_PROD_REPO}','--status=Released', '--comment=Tested.', '--copy=true' ]
   env:
   - "JFROG_CLI_TEMP_DIR=./"
   - "JFROG_CLI_HOME_DIR=./"
