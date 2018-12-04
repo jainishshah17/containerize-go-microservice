@@ -10,7 +10,7 @@
         "aql": "items.find({\"repo\": \"docker-prod-local\",\"path\": \"containerize-go-microservice/DOCKER_TAG\"})"
       },
       {
-        "aql": "items.find({\"repo\":\"helm-local\",\"name\":\"HELM_CHART\"})"
+        "aql": "items.find({\"repo\":\"helm-prod-local\",\"name\":\"HELM_CHART\"})"
       }
     ]
   }
