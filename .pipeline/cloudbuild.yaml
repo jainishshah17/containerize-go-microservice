@@ -64,7 +64,7 @@ steps:
   - "JFROG_CLI_HOME_DIR=./"
   id: 'build_helm_chart'
   waitFor:
-  - 'push_static_tag'
+  - 'push_dynamic_tag'
 
 # Push Helm chart to JFrog Artifactory using JFrog CLI
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
