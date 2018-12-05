@@ -18,7 +18,7 @@ node (SLAVE) {
 
     //Build docker image named containerize-go-microservice
     stage ('Build & Deploy') {
-            sh "sed -i 's/kubecon-docker.jfrog.team/${ART_DOCKER_REGISTRY}/' Dockerfile"
+            sh "sed -i 's/k8s-art.jfrog.team/${ART_DOCKER_REGISTRY}/' Dockerfile"
             tagDockerApp = "${ART_DOCKER_REGISTRY}/containerize-go-microservice:${env.BUILD_NUMBER}"
             println "containerize-go-microservice Build"
             docker.build(tagDockerApp)

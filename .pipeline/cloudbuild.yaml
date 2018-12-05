@@ -28,8 +28,8 @@ steps:
   - 'build'
   - '--rm'
   - '--no-cache'
-#  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:latest'
-  - '--tag=kubecon-docker.jfrog.team/containerize-go-microservice:$BUILD_ID'
+#  - '--tag=${_ART_DOCKER_REGISTRY}/containerize-go-microservice:latest'
+  - '--tag=${_ART_DOCKER_REGISTRY}/containerize-go-microservice:$BUILD_ID'
   - '.'
   id: 'containerize_app'
   waitFor:

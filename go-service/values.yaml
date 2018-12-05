@@ -7,13 +7,14 @@ replicaCount: 1
 imagePullSecrets:
 
 image:
-  repository: kubecon-edge.jfrog.team/containerize-go-microservice
+  repository: k8s-edge1.jfrog.team/containerize-go-microservice
   # Note that by default we use appVersion to get image tag
   # tag: latest
   pullPolicy: Always
 
 service:
   type: LoadBalancer
+  nodePort: 30002
   internalPort: 8080
   externalPort: 80
 
