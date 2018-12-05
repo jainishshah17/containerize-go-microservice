@@ -1,4 +1,4 @@
-FROM kubecon-docker.jfrog.team/golang:1.11.2-alpine
+FROM k8s-art.jfrog.team/golang:1.11.2-alpine
 
 ENV PORT 8080
 
