@@ -7,8 +7,9 @@ replicaCount: 1
 imagePullSecrets:
 
 image:
-  repository: docker.artifactory/containerize-go-microservice
-  tag: latest
+  repository: kubecon-edge.jfrog.team/containerize-go-microservice
+  # Note that by default we use appVersion to get image tag
+  # tag: latest
   pullPolicy: Always
 
 service:

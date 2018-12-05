@@ -15,6 +15,17 @@ steps:
     - "JFROG_CLI_HOME_DIR=./"
   id: 'setup_environment'
 
+# Update Docker Tag in Helm Chart
+- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+  entrypoint: 'bash'
+  args: ['-c', 'sed -i "s/latest/${_IMAGE_TAG}/g" go-service/Chart.yaml']
+  env:
+  - "JFROG_CLI_TEMP_DIR=./"
+  - "JFROG_CLI_HOME_DIR=./"
+  id: 'update_image_tag'
+  waitFor:
+  - 'setup_environment'
+
 # Lint Helm chart
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
@@ -24,7 +35,7 @@ steps:
   - "JFROG_CLI_HOME_DIR=./"
   id: 'lint_helm_chart'
   waitFor:
-  - 'setup_environment'
+  - 'update_image_tag'
 
 # Build Helm chart
 - name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
