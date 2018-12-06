@@ -8,7 +8,7 @@
 steps:
 
 # Configure JFrog CLI to point to JFrog Artifactory
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'c', 'art-repo', '--url=${_ARTIFACTORY_URL}', '--user=${_USER}', '--password=${_PASSWORD}']
   env:
     - "JFROG_CLI_TEMP_DIR=./"
@@ -37,7 +37,7 @@ steps:
 
 
 # Push docker image to JFrog Artifactory using JFrog CLI
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:$BUILD_ID', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
@@ -47,7 +47,7 @@ steps:
   - 'containerize_app'
 
 ## Push latest docker image to JFrog Artifactory using JFrog CLI
-#- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+#- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
 #  args: ['rt', 'docker-push', '${_ART_DOCKER_REGISTRY}/containerize-go-microservice:latest', '${_DOKCER_VIRTUAL_REPO}', '--build-name=${_BUILD_NAME}', '--build-number=$BUILD_ID']
 #  env:
 #  - "JFROG_CLI_TEMP_DIR=./"
@@ -57,7 +57,7 @@ steps:
 #  - 'push_static_tag'
 
 # Capture Build Information
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'bce', '${_BUILD_NAME}', '$BUILD_ID']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
@@ -67,7 +67,7 @@ steps:
   - 'push_static_tag'
 
 # Publish Build Information to Artifactory
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'bp', '${_BUILD_NAME}', '$BUILD_ID']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
@@ -77,7 +77,7 @@ steps:
   - 'capture_build_info'
 
 # Scan Build using JFrog Xray
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'bs', '${_BUILD_NAME}', '$BUILD_ID']
   env:
   - "JFROG_CLI_TEMP_DIR=./"
@@ -87,7 +87,7 @@ steps:
   - 'publish_build_info'
 
 # Promote Build
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   args: ['rt', 'bpr', '${_BUILD_NAME}', '$BUILD_ID', '${_DOCKER_PROD_REPO}','--status=Released', '--comment=Tested.' , '--copy=true']
   env:
   - "JFROG_CLI_TEMP_DIR=./"

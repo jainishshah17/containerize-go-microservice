@@ -7,7 +7,7 @@
 steps:
 
 # Prepare AQL Query
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
   args: ['-c', 'sed -E "s/VERSION/${_BUNDLE_VERSION}/g; s/ART_ID/${_SOURCE_ART_ID}/g; s/HELM_CHART/${_HELM_CHART}/g; s/DOCKER_TAG/${_DOCKER_IMAGE_TAG}/g" .pipeline/releaseBundle.json > .pipeline/bundle.json']
   env:
@@ -16,7 +16,7 @@ steps:
   id: 'prepare_aql_query'
 
 # Create Release Bundle
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
   args: [ '-c', 'curl -X POST -u ${_USER}:${_PASSWORD} -H "Content-Type: application/json" ${_DIST_URL}/api/v1/release_bundle -T .pipeline/bundle.json']
   env:
@@ -27,7 +27,7 @@ steps:
   - 'prepare_aql_query'
 
 # Sign Release Bundle
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
   args: [ '-c', 'curl -X POST -H "Content-Type: application/json" -u ${_USER}:${_PASSWORD} ${_DIST_URL}/api/v1/release_bundle/go-service/${_BUNDLE_VERSION}/sign']
   env:
@@ -38,7 +38,7 @@ steps:
   - 'create_release_bundle'
 
 # Distribute Release Bundle To Edge Nodes
-- name: 'jainishshah17/google-cloud-builder-docker:1.22.1'
+- name: 'k8s-art.jfrog.team/google-cloud-builder-docker:1.22.1'
   entrypoint: 'bash'
   args: [ '-c', 'curl -X POST -H "Content-Type: application/json" -u ${_USER}:${_PASSWORD} ${_DIST_URL}/api/v1/distribution/go-service/${_BUNDLE_VERSION} -T .pipeline/distribution.json']
   env:
